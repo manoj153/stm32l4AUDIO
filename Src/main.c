@@ -92,7 +92,7 @@ int main(void)
   BSP_LED_Init(LED5);
 
   /* Check if the buffer has been loaded in flash */
-  if(*((uint64_t *)AUDIO_FILE_ADDRESS) != 0x017EFE2446464952 ) Error_Handler();
+  if(*((uint64_t *)AUDIO_FILE_ADDRESS) != 0x00013A7E46464952 ) Error_Handler(); //CH
 
   /* Initialize playback */
   Playback_Init();

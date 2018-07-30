@@ -48,7 +48,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #define AUDIO_FILE_ADDRESS   0x08080000
-#define AUDIO_FILE_SIZE      (180*1024)
+#define AUDIO_FILE_SIZE      (79*1024)
 #define PLAY_HEADER          0x2C
 #define PLAY_BUFF_SIZE       4096
 /* Private macro -------------------------------------------------------------*/
@@ -92,13 +92,14 @@ int main(void)
   BSP_LED_Init(LED5);
 
   /* Check if the buffer has been loaded in flash */
-  if(*((uint64_t *)AUDIO_FILE_ADDRESS) != 0x00013A7E46464952 ) Error_Handler(); //CH
+  if(*((uint64_t *)AUDIO_FILE_ADDRESS) != 0x00013A7E46464952 ) Error_Handler(); //
 
   /* Initialize playback */
   Playback_Init();
 
   /* Initialize the data buffer */
-  for(int i=0; i < PLAY_BUFF_SIZE; i+=2)
+	//this for loop loads first 4kb of the audio to buffer used half of buffer in such sequence 0,2,4,6,8
+  for(int i=0; i < PLAY_BUFF_SIZE; i+=2) //2048 times all even number gone
   {
     PlayBuff[i]=*((__IO uint16_t *)(AUDIO_FILE_ADDRESS + PLAY_HEADER + i)); // loaded 16bytes(8kb data).. ..
   }
@@ -109,6 +110,7 @@ int main(void)
 		
     Error_Handler();
   }
+	//Stream first 4KB of audio
   if(HAL_OK != HAL_SAI_Transmit_DMA(&SaiHandle, (uint8_t *)PlayBuff, PLAY_BUFF_SIZE))
   {
     Error_Handler();
@@ -120,20 +122,20 @@ int main(void)
     BSP_LED_Toggle(LED5);
 
     /* Wait a callback event */
-    while(UpdatePointer==-1); //Stuck till the DMA complete transfer the audio.
+    while(UpdatePointer==-1); //Stuck till the DMA complete transfer the audio. DMA cmplet var UpdatePointer = 2048.
     
     int position = UpdatePointer;	//Value:2048?(DMA Tx Cpmlt)
     UpdatePointer = -1;
 
     /* Upate the first or the second part of the buffer */
-    for(int i = 0; i < PLAY_BUFF_SIZE/2; i++)
+    for(int i = 0; i < PLAY_BUFF_SIZE/2; i++) //4kb data 
     {
-      PlayBuff[i+position] = *(uint16_t *)(AUDIO_FILE_ADDRESS + PlaybackPosition);//first 2048+0,, 2048+2
+      PlayBuff[i+position] = *(uint16_t *)(AUDIO_FILE_ADDRESS + PlaybackPosition);//first 2048+0,, 2048+1,second half
       PlaybackPosition+=2; 
     }
 
     /* check the end of the file */
-    if((PlaybackPosition+PLAY_BUFF_SIZE/2) > AUDIO_FILE_SIZE) // 2048 + 2048 = 4098...
+    if((PlaybackPosition+PLAY_BUFF_SIZE/2) > AUDIO_FILE_SIZE) // 2048 + 2048 = 4098...  
     {
       PlaybackPosition = PLAY_HEADER;
     }
